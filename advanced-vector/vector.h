@@ -124,6 +124,7 @@ public:
     template <typename... Args>
     iterator Emplace(const_iterator pos, Args&&... args)
     {
+        assert(pos >= begin() && pos <= end());
         if (pos == cend()) {
             EmplaceBack(std::forward<Args>(args)...);
             return data_ + size_ - 1;
@@ -199,6 +200,7 @@ public:
 
     iterator Erase(const_iterator pos)
     {
+        assert(pos >= begin() && pos <= end());
         size_t num_pos = std::distance(cbegin(), pos);
         std::move(begin() + num_pos + 1, end(), begin() + num_pos);
         std::destroy_at(end() - 1);
@@ -303,11 +305,11 @@ public:
                     std::destroy_n(data_ + rhs.Size(), Size() - rhs.Size());
                 }
                 else {
-                    for (size_t i = 0; i < Size(); ++i)
+                    for (size_t i = 0; i < size_; ++i)
                     {
                         data_[i] = rhs.data_[i];
                     }
-                    std::uninitialized_copy_n(rhs.data_ + Size(), rhs.Size() - Size(), data_.GetAddress());
+                    std::uninitialized_copy_n(rhs.data_ + Size(), rhs.Size() - Size(), data_.GetAddress() + size_);
                 }
             }
         }
@@ -340,8 +342,7 @@ public:
         RawMemory<T> new_data(new_capacity);
         if constexpr (std::is_nothrow_move_constructible_v<T> || !std::is_copy_constructible_v<T>)
         {
-            std::uninitialized_move_n(data_.GetAddress(), Size(),
-                new_data.GetAddress());
+            std::uninitialized_move_n(data_.GetAddress(), Size(), new_data.GetAddress());
         }
         else
         {
